@@ -18,7 +18,6 @@ public abstract class BaseWebTest {
 
   LoginPage loginPage = new LoginPage();
   NavigationPanel navigationPanel = new NavigationPanel();
-
   InvitationTableForm invitationTableForm = new InvitationTableForm();
 
 }

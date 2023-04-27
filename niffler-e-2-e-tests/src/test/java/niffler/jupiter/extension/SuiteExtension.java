@@ -18,6 +18,7 @@ public interface SuiteExtension extends BeforeAllCallback {
             k -> {
               beforeSuite();
               return (ExtensionContext.Store.CloseableResource) this::afterSuite;
-            });
+            }
+        );
   }
 }
