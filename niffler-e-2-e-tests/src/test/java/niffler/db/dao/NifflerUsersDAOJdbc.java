@@ -10,6 +10,7 @@ import java.util.UUID;
 import javax.sql.DataSource;
 import niffler.db.DataSourceProvider;
 import niffler.db.ServiceDB;
+import niffler.db.entity.AuthorityEntity;
 import niffler.db.entity.UserEntity;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;

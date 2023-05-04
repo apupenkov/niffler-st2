@@ -1,9 +1,11 @@
 package niffler.test;
 
 import com.codeborne.selenide.Selenide;
+import com.github.javafaker.Faker;
 import io.qameta.allure.Allure;
 import io.qameta.allure.AllureId;
 import niffler.db.dao.NifflerUsersDAO;
+import niffler.db.dao.NifflerUsersDAOHibernate;
 import niffler.db.dao.NifflerUsersDAOJdbc;
 import niffler.db.entity.Authority;
 import niffler.db.entity.AuthorityEntity;
@@ -23,7 +25,8 @@ import static com.codeborne.selenide.Selenide.$;
 
 public class LoginNewUserTest extends BaseWebTest {
 
-  private NifflerUsersDAO usersDAO = new NifflerUsersDAOJdbc();
+  private static Faker faker = new Faker();
+  private NifflerUsersDAO usersDAO = new NifflerUsersDAOHibernate();
   private UserEntity ue;
 
   @AllureId("264")
