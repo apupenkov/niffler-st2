@@ -7,12 +7,13 @@ import niffler.db.entity.Authority;
 import niffler.db.entity.AuthorityEntity;
 import niffler.db.entity.UserEntity;
 import niffler.jupiter.annotation.CreateUser;
+import niffler.utils.RANDOMUSERDATA;
 import org.junit.jupiter.api.extension.*;
 
 import java.util.Arrays;
 import java.util.Objects;
 
-public class CreateUserViaDb  implements BeforeEachCallback, ParameterResolver {
+public class CreateUserViaDb  implements BeforeEachCallback, AfterEachCallback, ParameterResolver {
 
     public static final ExtensionContext.Namespace CREATE_USER_NAMESPACE = ExtensionContext.Namespace.create(CreateUserViaDb.class);
 
@@ -37,10 +38,10 @@ public class CreateUserViaDb  implements BeforeEachCallback, ParameterResolver {
         UserEntity user;
 
         if(createUserAnno != null) {
-            NifflerUsersDAO usersDAO = new NifflerUsersDAOJdbc();
+            NifflerUsersDAO usersDAO = createUserAnno.userDao().getDao();
             user = new UserEntity();
-            user.setUsername(createUserAnno.username());
-            user.setPassword(createUserAnno.password());
+            user.setUsername(createUserAnno.username().getName());
+            user.setPassword(usersDAO.pe.encode(createUserAnno.password().getPass()));
             user.setEnabled(createUserAnno.enabled());
             user.setAccountNonExpired(createUserAnno.accountNonExpired());
             user.setAccountNonLocked(createUserAnno.accountNonLocked());
@@ -52,7 +53,7 @@ public class CreateUserViaDb  implements BeforeEachCallback, ParameterResolver {
                         return ae;
                     }
             ).toList());
-            usersDAO.createUser(user);
+            int i = usersDAO.createUser(user);
 
             context.getStore(CREATE_USER_NAMESPACE).put(testId, user);
         }
@@ -62,5 +63,22 @@ public class CreateUserViaDb  implements BeforeEachCallback, ParameterResolver {
         return Objects
                 .requireNonNull(context.getRequiredTestMethod().getAnnotation(AllureId.class))
                 .value();
+    }
+
+    @Override
+    public void afterEach(ExtensionContext context) throws Exception {
+        final String testId = getTestId(context);
+
+        CreateUser createUserAnno = context.getRequiredTestMethod().getAnnotation(CreateUser.class);
+
+        int executeUpdate = 0;
+
+        if(createUserAnno != null && createUserAnno.isDelete()) {
+            NifflerUsersDAO usersDAO = createUserAnno.userDao().getDao();
+            executeUpdate = usersDAO.removeUser(((UserEntity) context.getStore(CREATE_USER_NAMESPACE).get(testId)));
+            if(executeUpdate > 0) {
+                context.getStore(CREATE_USER_NAMESPACE).remove(testId);
+            }
+        }
     }
 }

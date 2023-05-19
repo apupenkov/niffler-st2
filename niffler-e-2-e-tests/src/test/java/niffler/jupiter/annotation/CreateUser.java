@@ -1,6 +1,8 @@
 package niffler.jupiter.annotation;
 
+import niffler.db.dao.DAOTYPE;
 import niffler.jupiter.extension.CreateUserViaDb;
+import niffler.utils.RANDOMUSERDATA;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.lang.annotation.ElementType;
@@ -13,10 +15,12 @@ import java.lang.annotation.Target;
 @ExtendWith(CreateUserViaDb.class)
 public @interface CreateUser {
 
-    String username();
-    String password();
-    boolean enabled();
-    boolean accountNonExpired();
-    boolean accountNonLocked();
-    boolean credentialsNonExpired();
+    DAOTYPE userDao() default DAOTYPE.HIBERNATE;
+    RANDOMUSERDATA username() default RANDOMUSERDATA.FAKE;
+    RANDOMUSERDATA password() default RANDOMUSERDATA.FAKE;
+    boolean enabled() default true;
+    boolean accountNonExpired() default true;
+    boolean accountNonLocked() default true;
+    boolean credentialsNonExpired() default true;
+    boolean isDelete() default true;
 }

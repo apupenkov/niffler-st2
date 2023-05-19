@@ -27,12 +27,12 @@ public class NifflerUsersDAOJdbc implements NifflerUsersDAO {
     final String CREATE_USER_QUERY = "INSERT INTO users "
             + "(username, password, enabled, account_non_expired, account_non_locked, credentials_non_expired) "
             + " VALUES (?, ?, ?, ?, ?, ?)";
-    final String INSERT_AUTHORITY_QUERY = "INSERT INTO authorities (user_id, authority) VALUES ('%s', '%s')";
+    final String INSERT_AUTHORITY_QUERY = "INSERT INTO authorities (user_id, authority) VALUES (?, ?)";
 
     try(Connection conn = ds.getConnection()) {
       try (PreparedStatement userStmnt = conn.prepareStatement(CREATE_USER_QUERY);
            PreparedStatement getUserIdStmnt = conn.prepareStatement("SELECT * FROM users WHERE username = ?");
-           Statement authorityStmnt = conn.createStatement()) {
+           PreparedStatement authorityStmnt = conn.prepareStatement(INSERT_AUTHORITY_QUERY)) {
 
         conn.setAutoCommit(false);
 
@@ -52,17 +52,14 @@ public class NifflerUsersDAOJdbc implements NifflerUsersDAO {
           userId = resultSet.getString(1);
         }
 
-        final String USER_ID = userId;
-
-        List<String> sqls = user.getAuthorities()
-                .stream()
-                .map(ae -> ae.getAuthority().name())
-                .map(a -> String.format(INSERT_AUTHORITY_QUERY, USER_ID, a))
-                .toList();
-
-        for (String sql : sqls) {
-          authorityStmnt.executeUpdate(sql);
+        for (AuthorityEntity authorityEntity : user.getAuthorities()) {
+          authorityStmnt.setObject(1, UUID.fromString(userId));
+          authorityStmnt.setString(2, authorityEntity.getAuthority().name());
+          authorityStmnt.addBatch();
+          authorityStmnt.clearParameters();
         }
+        authorityStmnt.executeBatch();
+
         conn.commit();
       } catch (SQLException e) {
         try {
@@ -99,7 +96,7 @@ public class NifflerUsersDAOJdbc implements NifflerUsersDAO {
   }
 
   @Override
-  public UserEntity selectUser(String userName) {
+  public UserEntity getUser(String userName) {
     UserEntity user;
     try (Connection conn = ds.getConnection();
          PreparedStatement st = conn.prepareStatement("SELECT * FROM users WHERE username = ?")) {
@@ -117,7 +114,7 @@ public class NifflerUsersDAOJdbc implements NifflerUsersDAO {
   }
 
   @Override
-  public int updateUser(String userName, UserEntity user) {
+  public int updateUser(UserEntity user) {
 
     int executeUpdate;
 
@@ -126,14 +123,13 @@ public class NifflerUsersDAOJdbc implements NifflerUsersDAO {
                  "SET username=?, password=?, enabled=?, account_non_expired=?, " +
                  "account_non_locked=?, credentials_non_expired=? " +
                  "WHERE username=?")) {
-
-      st.setString(1, user.getUsername());
+      st.setString(1,  user.getUsername());
       st.setString(2, pe.encode(user.getPassword()));
       st.setBoolean(3, user.getEnabled());
       st.setBoolean(4, user.getAccountNonExpired());
       st.setBoolean(5, user.getAccountNonLocked());
       st.setBoolean(6, user.getCredentialsNonExpired());
-      st.setString(7, userName);
+      st.setString(7,  user.getUsername());
 
       executeUpdate = st.executeUpdate();
 
@@ -144,11 +140,11 @@ public class NifflerUsersDAOJdbc implements NifflerUsersDAO {
   }
 
   @Override
-  public int deleteUser(String userName) {
+  public int removeUser(UserEntity user) {
 
     int executeUpdate;
 
-    final String user_id = getUserId(userName);
+    final String user_id = getUserId(user.getUsername());
 
     try (Connection conn = ds.getConnection()) {
       try (PreparedStatement authoritiesStmnt = conn.prepareStatement("DELETE FROM public.authorities WHERE user_id = ?");
@@ -159,7 +155,7 @@ public class NifflerUsersDAOJdbc implements NifflerUsersDAO {
         authoritiesStmnt.setObject(1, UUID.fromString(user_id));
         authoritiesStmnt.executeUpdate();
 
-        usersStmnt.setString(1, userName);
+        usersStmnt.setString(1, user.getUsername());
         executeUpdate = usersStmnt.executeUpdate();
 
         conn.commit();

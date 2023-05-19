@@ -23,7 +23,7 @@ public class DeleteUserViaDb implements AfterEachCallback {
 
         if(isAnnotateForDelete) {
             NifflerUsersDAO usersDAO = new NifflerUsersDAOJdbc();
-            executeUpdate = usersDAO.deleteUser(((UserEntity) context.getStore(CREATE_USER_NAMESPACE).get(testId)).getUsername());
+            executeUpdate = usersDAO.removeUser(((UserEntity) context.getStore(CREATE_USER_NAMESPACE).get(testId)));
             if(executeUpdate > 0) {
                 context.getStore(CREATE_USER_NAMESPACE).remove(testId);
             }

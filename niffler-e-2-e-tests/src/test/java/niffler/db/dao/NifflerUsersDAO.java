@@ -10,16 +10,15 @@ import java.util.List;
 public interface NifflerUsersDAO {
 
   PasswordEncoder pe = PasswordEncoderFactories.createDelegatingPasswordEncoder();
+
   int createUser(UserEntity user);
+
+  int updateUser(UserEntity user);
 
   String getUserId(String userName);
 
   int removeUser(UserEntity user);
 
-  UserEntity selectUser(String userName);
-
-  int updateUser(String userName, UserEntity user);
-
-  int deleteUser(String userName);
+  UserEntity getUser(String userName);
 
 }
